@@ -1,0 +1,168 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <link itemid="2" rel="stylesheet" type="text/css" href="stylesmobile.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+</head>
+
+<body onload="update();">
+    <div id="circle" class="mydiv"></div>
+    <div id="square" class="mydiv"></div>
+    <div id="triangle" class="mydiv"></div>
+    <div id="oval" class="mydiv"></div>
+
+    <script>
+        window.onload = function () {
+            initMovment(window.innerWidth, window.innerHeight);
+            update();
+            if (navigator.userAgent.match(/iPhone/i)) {
+                console.log("iphone");
+                var oldlink = document.getElementsByTagName("link").item("0");
+
+                var newlink = document.createElement("link");
+                newlink.setAttribute("rel", "stylesheet");
+                newlink.setAttribute("type", "text/css");
+                newlink.setAttribute("href", "stylesmobileIPHONE.css");
+
+                document.getElementsByTagName("head").item(0).replaceChild(newlink, oldlink);
+            }
+            else {
+                console.log("xd");
+                var oldlink = document.getElementsByTagName("link").item("0");
+
+                var newlink = document.createElement("link");
+                newlink.setAttribute("rel", "stylesheet");
+                newlink.setAttribute("type", "text/css");
+                newlink.setAttribute("href", "stylesmobile.css");
+
+                document.getElementsByTagName("head").item(0).replaceChild(newlink, oldlink);
+            }
+        }
+
+        function initMovment(width, height) {
+            var obs = document.querySelectorAll('.mydiv');
+            var zIndex = 1;
+            var x, y, that;
+            var stopAll = function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+            var startMovement = function (e, That) {
+                x = e.pageX;
+                y = e.pageY;
+                that = That;
+                that.style.zIndex = zIndex++;
+                stopAll(e);
+            }
+            var beginingOfTouchMovement = function (e) {
+                if (e.changedTouches.length > 0) startMovement(e.changedTouches[0], this);
+            }
+            var startOfMouseMovement = function (e) {
+                window.addEventListener('mousemove', mouseOrTouchMovement, true);
+                window.addEventListener('mouseup', endOfMouseMovement, true);
+                startMovement(e, this);
+            }
+            var stopMovment = function (e) {
+                stopAll(e);
+            }
+            var mouseOrTouchMovement = function (e) {
+                var dx = e.pageX - x;
+                var dy = e.pageY - y;
+                x = e.pageX;
+                y = e.pageY;
+                that.style.top = (that.offsetTop + +dy) + 'px';
+                that.style.left = (that.offsetLeft + +dx) + 'px';
+                sendToServer();
+            }
+
+            function mouseMovement(e) {
+                mouseOrTouchMovement(e);
+                stopAll(e);
+            }
+            var endOfMouseMovement = function (e) {
+                window.removeEventListener('mouseup', endOfMouseMovement, true);
+                window.removeEventListener('mousemove', mouseOrTouchMovement, true);
+                stopAll(e);
+
+            }
+            var touchMovement = function (e) {
+                if (e.changedTouches.length > 0) mouseOrTouchMovement(e.changedTouches[0]);
+                stopAll(e);
+            }
+            var endOfTouchMovement = function (e) {
+                stopAll(e);
+            };
+            for (var i = 0; i < obs.length; i++) {
+                var ob = obs[i];
+                ob.addEventListener('mousedown', startOfMouseMovement, true);
+                ob.addEventListener('touchstart', beginingOfTouchMovement, false);
+                ob.addEventListener('touchmove', touchMovement, false);
+                ob.addEventListener('touchend', endOfTouchMovement, false);
+            }
+        }
+
+
+        function sendToServer() {
+            var circlexx = document.getElementById("circle").style.top;
+            var circleyy = document.getElementById("circle").style.left;
+            var squarexx = document.getElementById("square").style.top;
+            var squareyy = document.getElementById("square").style.left;
+            var trianglexx = document.getElementById("triangle").style.top;
+            var triangleyy = document.getElementById("triangle").style.left;
+            var ovalxx = document.getElementById("oval").style.top;
+            var ovalyy = document.getElementById("oval").style.left;
+            var log = JSON.stringify({
+                command: "set",
+                "circlex": circlexx,
+                "circley": circleyy,
+                "squarex": squarexx,
+                "squarey": squareyy,
+                "trianglex": trianglexx,
+                "triangley": triangleyy,
+                "ovalx": ovalxx,
+                "ovaly": ovalyy
+            });
+
+            var request = new XMLHttpRequest();
+            var url = "server.php";
+            request.open("POST", url, true);
+            request.setRequestHeader("Content-Type", "application/json");
+            request.send(log);
+        }
+
+        function update() {
+            var request = new XMLHttpRequest();
+            var url = "server.php";
+            var log = JSON.stringify({
+                command: "get"
+            });
+            request.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var response = JSON.parse(this.responseText);
+
+                    document.getElementById("circle").style.top = response.circlex;
+                    document.getElementById("circle").style.left = response.circley;
+
+                    document.getElementById("square").style.top = response.squarex;
+                    document.getElementById("square").style.left = response.squarey;
+
+                    document.getElementById("triangle").style.top = response.trianglex;
+                    document.getElementById("triangle").style.left = response.triangley;
+
+                    document.getElementById("oval").style.top = response.ovalx;
+                    document.getElementById("oval").style.left = response.ovaly;
+                }
+            }
+            request.open("POST", url, true);
+            request.setRequestHeader("Content-Type", "application/json");
+            request.send(log);
+        }
+
+        var t = setInterval(update, 500);
+    </script>
+
+</body>
+
+</html>
